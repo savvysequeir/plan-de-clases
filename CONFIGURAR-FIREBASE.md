@@ -16,7 +16,7 @@
 
 1. Crea manualmente la cuenta docente con correo y contraseña en Firebase Authentication. Si deseas, usa **Estoico** como contraseña inicial, **cámbiala antes de usar datos reales**. No se incorpora como contraseña fija en JavaScript ni en reglas.
 2. Obtén el UID de la cuenta docente.
-3. Asigna el rol `teacher` con Admin SDK desde un equipo administrativo de confianza, usando `firebase/functions/grant-teacher.js` y credenciales de servicio administradas de forma segura: `node grant-teacher.js UID`. **Nunca subas credenciales privadas al repositorio**.
+3. Asigna el rol `teacher` con Admin SDK desde un equipo administrativo de confianza, usando `firebase/functions/grant-teacher.js` y credenciales de servicio administradas de forma segura: `node grant-teacher.js unijjar-portal-academico UID`. **Nunca subas credenciales privadas al repositorio**.
 4. Cierra y vuelve a iniciar sesión para actualizar los permisos.
 
 ## 3. Estudiantes
@@ -52,3 +52,20 @@
 La función protegida `getExamEligibility({studentUid,scope})` permite que el futuro Control de Notas consulte el porcentaje del estudiante **sin duplicar datos**. Solo cuenta sesiones finalizadas del grupo. `Presente`, `Tarde` y `Justificado` aprobado cuentan como asistencia; `Ausente` y solicitudes pendientes no cuentan. El mínimo es 70 %. Un estudiante solo puede consultar su propio resultado; un docente con rol autorizado puede consultar el de sus estudiantes. La función devuelve `total`, `valid`, `percentage`, `minimum` y `eligible`.
 
 **Importante:** el módulo de notas todavía no se ha creado. Esta función es la interfaz preparada para enlazarlo después. La pantalla del estudiante muestra el derecho a examen como referencia; el cálculo autoritativo para notas debe utilizar `getExamEligibility`.
+
+
+## Actualización de noviembre de 2026 — puesta en marcha segura
+
+**El ZIP no despliega Firebase automáticamente.** GitHub Pages solo publica HTML/JS.
+
+1. Instala Node.js 22, Firebase CLI (`npm install -g firebase-tools`) y Google Cloud CLI (`gcloud`).
+2. En terminal: `firebase login` y `gcloud auth application-default login` (con una cuenta autorizada para administrar Firebase Authentication). **No descargues ni subas archivos JSON de cuentas de servicio al repositorio.**
+3. En la carpeta `firebase/functions`: `npm install`. Luego: `node grant-teacher.js unijjar-portal-academico 1joQiJlWSDOhNX5bFVYD66b7iF72`. Esto asigna el rol al usuario existente; requiere los permisos IAM correspondientes. Cierra y vuelve a iniciar sesión en el portal.
+4. En la carpeta `firebase`: `firebase use --add` (selecciona `unijjar-portal-academico`), después `firebase deploy --only firestore:rules,storage,functions`. **Cloud Functions y posiblemente Cloud Storage pueden requerir plan Blaze y facturación**. Comprueba costes antes de activar.
+5. GitHub Pages sigue en `https://savvysequeir.github.io/plan-de-clases/`. El portal docente se abre en `/portal-estudiante/docente.html` y el del estudiante en `/portal-estudiante/index.html`.
+6. Para más de 300 estudiantes, `finalizeSession` ahora bloquea el registro antes de procesar ausencias y las crea en lotes de 200. Si se interrumpe, el docente puede reintentar; los registros existentes no se sobrescriben.
+7. **Importante:** la matriz de `asistencia/index.html` sigue siendo local y no se sincroniza automáticamente con Firestore. Usa el portal Firebase para los registros oficiales mientras se diseña la migración.
+8. Prueba con cuentas de docente y estudiante de ensayo antes de usar datos reales. Revisa reglas de acceso, evidencia y cuotas.
+
+### Comportamiento de las sesiones
+El servidor cierra la admisión antes de crear ausencias, impidiendo registros simultáneos durante el cierre. Una sesión en estado `closing` puede reintentarse desde el mismo panel docente. La elegibilidad para examen se calcula únicamente sobre sesiones `closed`.
