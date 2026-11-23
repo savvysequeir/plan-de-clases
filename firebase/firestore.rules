@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore { match /databases/{database}/documents {
+ function teacher(){return request.auth != null && request.auth.token.teacher == true;}
+ function mine(uid){return request.auth != null && request.auth.uid == uid;}
+ match /students/{uid} {allow get: if mine(uid)||teacher();allow list: if teacher();allow write: if false;}
+ match /sessions/{id} {allow get: if request.auth != null;allow list: if teacher();allow write: if false;}
+ match /attendance/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
+ match /justifications/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
+ match /audit/{id} {allow read: if teacher();allow write: if false;}
+ match /{document=**} {allow read,write: if false;}
+}}
