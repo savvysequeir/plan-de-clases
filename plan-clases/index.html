@@ -214,4 +214,37 @@ function transferAcademic(item,schedule){
  function preparePrint(){clearPrint();if(document.body.classList.contains('exam-printing'))return;document.querySelectorAll('main .panel textarea, main .panel input, main .panel select, main .break-row input').forEach(el=>{const v=document.createElement('div');v.className='print-value'+(el.tagName==='TEXTAREA'?'':' inline-value');v.textContent=el.tagName==='SELECT'?(el.selectedOptions[0]?.textContent||''):el.value;el.after(v);el.classList.add('print-replaced');});}
  window.addEventListener('beforeprint',preparePrint);window.addEventListener('afterprint',clearPrint);
 })();
+</script><script>
+(()=>{
+const academic=false;
+const button=document.getElementById(academic?'pdf':'print');
+if(!button)return;
+button.onclick=async()=>{
+ const frame=document.createElement('iframe');frame.style.cssText='position:fixed;left:-20000px;top:0;width:1250px;height:900px;border:0';document.body.append(frame);
+ try{
+ const d=frame.contentDocument,w=frame.contentWindow;
+ d.open();d.write('<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Plan '+(academic?'Académico':'de Clases')+'</title></head><body></body></html>');d.close();
+ const base=d.createElement('base');base.href=location.href;d.head.append(base);
+ // Keep the actual screen stylesheet, not the old alternate print layout.
+ for(const sheet of document.styleSheets){try{const st=d.createElement('style');st.textContent=Array.from(sheet.cssRules).filter(r=>!(r.type===CSSRule.MEDIA_RULE&&/\bprint\b/i.test(r.conditionText))&&r.type!==CSSRule.PAGE_RULE).map(r=>r.cssText).join('\n');d.head.append(st);}catch(e){}}
+ for(const a of document.body.attributes)d.body.setAttribute(a.name,a.value);
+ const wrapper=d.createElement('div');wrapper.id='pdf-full';d.body.append(wrapper);
+ for(const source of document.querySelectorAll('body > header, body > main')){
+ const copy=source.cloneNode(true);const originals=source.querySelectorAll('textarea,input,select');const targets=copy.querySelectorAll('textarea,input,select');
+ originals.forEach((el,i)=>{const t=targets[i];if(!t||el.type==='file'||el.type==='hidden'||el.type==='range')return;const v=d.createElement('div');v.className='pdf-field '+(el.tagName==='TEXTAREA'?'pdf-long':'pdf-short');v.textContent=el.tagName==='SELECT'?(el.selectedOptions[0]?.textContent||''):el.value;const cs=getComputedStyle(el);for(const k of ['backgroundColor','color','border','borderRadius','padding','fontFamily','fontSize','fontWeight','lineHeight','textAlign'])v.style[k]=cs[k];t.replaceWith(v);});
+ wrapper.append(copy);
+ }
+ wrapper.querySelectorAll('button,.actions,.hero-actions,.toolbar,.status,.hint,.no-print,.table-tools,.library,.exam-panel,#status,.logo-note,.career-switch input[type=range],input[type=file]').forEach(n=>n.remove());
+ const st=d.createElement('style');st.textContent=`*{box-sizing:border-box;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}html,body{margin:0!important;overflow:visible!important}#pdf-full{width:100%;overflow:visible}.pdf-field{width:100%;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:none!important;height:auto!important;min-height:0!important}.pdf-long{text-align:justify!important;text-align-last:start;min-height:1.5em!important}.pdf-short{min-height:1.5em!important}.tablewrap{overflow:visible!important;max-height:none!important;height:auto!important}.academic{zoom:1!important;max-width:none!important}.academic th{position:static!important}.academic td{vertical-align:top}.shell,.wrap{max-width:none!important;margin:0!important;padding:12px!important}.panel,.activity,.dimension{break-inside:auto!important;overflow:visible!important}.activity-heading,h2,h3{break-after:avoid}.academic thead{display:table-header-group}.academic tr{break-inside:auto!important}.academic td,.academic th{overflow-wrap:anywhere}.academic td .pdf-field{padding:3px!important}.academic td .pdf-long{min-height:30px!important}.pdf-field{orphans:2;widows:2}`;d.head.append(st);
+ if(academic){const table=wrapper.querySelector('.academic');if(table){const col=table.querySelector('colgroup');if(col&&col.lastElementChild)col.lastElementChild.remove();const width=Math.ceil(Math.max(table.scrollWidth,table.getBoundingClientRect().width))+30;wrapper.style.width=width+'px';frame.style.width=width+'px';}}
+ else {const width=Math.max(900,Math.min(1250,document.querySelector('main').getBoundingClientRect().width+36));wrapper.style.width=width+'px';frame.style.width=width+'px';}
+ await d.fonts.ready;await Promise.all(Array.from(d.images).map(img=>img.decode().catch(()=>{})));await new Promise(r=>w.requestAnimationFrame(()=>w.requestAnimationFrame(r)));
+ const width=Math.ceil(Math.max(wrapper.scrollWidth,wrapper.getBoundingClientRect().width));
+ // A3 landscape for the wide academic table; A4 landscape for the lesson form.
+ const available=(academic?420:297)*96/25.4-16*96/25.4;
+ const scale=Math.min(1,available/width);const print=d.createElement('style');print.textContent=`@page{size:${academic?'A3':'A4'} landscape;margin:8mm}@media print{#pdf-full{zoom:${scale};width:${width}px!important}html,body{width:auto!important;min-width:0!important}.academic thead{display:table-header-group}}`;d.head.append(print);
+ w.addEventListener('afterprint',()=>frame.remove(),{once:true});w.focus();w.print();
+ }catch(e){frame.remove();alert('No se pudo preparar el PDF: '+e.message);}
+};
+})();
 </script></body></html>
