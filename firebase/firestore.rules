@@ -10,7 +10,8 @@ service cloud.firestore {
    allow get: if signed(); allow list: if teacher(); allow write: if teacher();
   }
   match /attendance/{id} {
-   allow read: if teacher() || (signed() && resource.data.studentUid == request.auth.uid);
+   allow get: if teacher() || (signed() && (resource.data.studentUid == request.auth.uid || (!exists(/databases/$(database)/documents/attendance/$(id)) && id.matches('^[A-Za-z0-9_-]+_' + request.auth.uid + '$'))));
+   allow list: if teacher() || (signed() && resource.data.studentUid == request.auth.uid);
    allow create: if teacher() || (signed()
      && id.matches('^[A-Za-z0-9_-]+_[A-Za-z0-9_-]+$')
      && request.resource.data.studentUid == request.auth.uid
