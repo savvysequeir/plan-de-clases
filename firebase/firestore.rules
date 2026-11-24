@@ -1,12 +1,53 @@
 rules_version = '2';
-service cloud.firestore { match /databases/{database}/documents {
- function teacher(){return request.auth != null && request.auth.token.teacher == true;}
- function mine(uid){return request.auth != null && request.auth.uid == uid;}
- match /students/{uid} {allow get: if mine(uid)||teacher();allow list: if teacher();allow write: if false;}
- match /sessions/{id} {allow get: if request.auth != null;allow list: if teacher();allow write: if false;}
- match /attendance/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
- match /justifications/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
- match /grades/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
- match /audit/{id} {allow read: if teacher();allow write: if false;}
- match /{document=**} {allow read,write: if false;}
-}}
+service cloud.firestore {
+ match /databases/{database}/documents {
+  function signed() { return request.auth != null; }
+  function teacher() { return signed() && (request.auth.uid == '1joQiJlWSDOhNX5bFVYD66b7iF72' || request.auth.token.teacher == true); }
+  function owner(uid) { return signed() && request.auth.uid == uid; }
+  function studentScope() { return get(/databases/$(database)/documents/students/$(request.auth.uid)).data.scope; }
+  match /students/{uid} { allow read: if teacher() || owner(uid); allow create,update,delete: if teacher(); }
+  match /sessions/{id} {
+   allow get: if signed(); allow list: if teacher(); allow write: if teacher();
+  }
+  match /attendance/{id} {
+   allow read: if teacher() || (signed() && resource.data.studentUid == request.auth.uid);
+   allow create: if teacher() || (signed()
+     && id.matches('^[A-Za-z0-9_-]+_[A-Za-z0-9_-]+$')
+     && request.resource.data.studentUid == request.auth.uid
+     && request.resource.data.keys().hasOnly(['studentUid','carnet','scope','sessionId','date','title','status','time','createdAt'])
+     && request.resource.data.sessionId is string
+     && id == request.resource.data.sessionId + '_' + request.auth.uid
+     && exists(/databases/$(database)/documents/students/$(request.auth.uid))
+     && request.resource.data.carnet == get(/databases/$(database)/documents/students/$(request.auth.uid)).data.carnet
+     && request.resource.data.scope == studentScope()
+     && exists(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId))
+     && get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.scope == studentScope()
+     && get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.status == 'open'
+     && request.time >= get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.startsAt
+     && request.time <= get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.endsAt
+     && request.resource.data.date == get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.date
+     && request.resource.data.title == get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.title
+     && request.resource.data.status in ['Presente','Tarde']
+     && request.resource.data.createdAt == request.time
+     && request.resource.data.time == request.time
+     && ((request.time <= get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.tardyAt && request.resource.data.status == 'Presente')
+      || (request.time > get(/databases/$(database)/documents/sessions/$(request.resource.data.sessionId)).data.tardyAt && request.resource.data.status == 'Tarde')));
+   allow update,delete: if teacher();
+  }
+  match /grades/{id} { allow read: if teacher() || (signed() && resource.data.studentUid == request.auth.uid); allow write: if teacher(); }
+  match /justifications/{id} {
+   allow read: if teacher() || (signed() && resource.data.studentUid == request.auth.uid);
+   allow create: if signed() && request.resource.data.studentUid == request.auth.uid
+     && request.resource.data.keys().hasOnly(['studentUid','attendanceId','cause','reason','status','createdAt'])
+     && request.resource.data.cause == 'estudiante'
+     && request.resource.data.reason is string && request.resource.data.reason.size() > 0 && request.resource.data.reason.size() <= 1000
+     && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time
+     && exists(/databases/$(database)/documents/attendance/$(request.resource.data.attendanceId))
+     && get(/databases/$(database)/documents/attendance/$(request.resource.data.attendanceId)).data.studentUid == request.auth.uid;
+   allow update,delete: if teacher();
+  }
+  match /instrumentos/{id} { allow read,write: if teacher(); }
+  match /audit/{id} { allow read,write: if teacher(); }
+  match /{document=**} { allow read,write: if false; }
+ }
+}
