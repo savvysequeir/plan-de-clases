@@ -6,6 +6,7 @@ service cloud.firestore { match /databases/{database}/documents {
  match /sessions/{id} {allow get: if request.auth != null;allow list: if teacher();allow write: if false;}
  match /attendance/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
  match /justifications/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
+ match /grades/{id} {allow get,list: if request.auth != null && (resource.data.studentUid==request.auth.uid || teacher());allow write: if false;}
  match /audit/{id} {allow read: if teacher();allow write: if false;}
  match /{document=**} {allow read,write: if false;}
 }}

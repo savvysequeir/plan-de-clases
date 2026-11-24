@@ -1,6 +1,6 @@
 # UNIJJAR — Activación de asistencia QR con Firebase
 
-**Estado:** código preparado, **NO desplegado**. Sin tu proyecto Firebase y sus credenciales públicas no se puede poner en producción ni sincronizar móviles. La antigua asistencia local sigue existiendo; el sistema nuevo es independiente. **No hay sincronización automática entre las tablas antiguas y Firestore**.
+**Estado:** código preparado, **NO desplegado**. La configuración pública del proyecto Firebase ya está incorporada. Aún es necesario desplegar los servicios, activar los productos requeridos y asignar permisos docentes. La antigua asistencia local sigue existiendo; el sistema nuevo es independiente. **No hay sincronización automática entre las tablas antiguas y Firestore**.
 
 ## 1. Crear y configurar Firebase
 
