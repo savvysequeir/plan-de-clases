@@ -5,6 +5,16 @@ service cloud.firestore {
   function teacher() { return signed() && (request.auth.uid == '1joQiJlWSDOhNX5bFVYD66b7iF72' || request.auth.token.teacher == true); }
   function owner(uid) { return signed() && request.auth.uid == uid; }
   function studentScope() { return get(/databases/$(database)/documents/students/$(request.auth.uid)).data.scope; }
+  match /enrollmentLocks/{id} { allow read,write: if teacher(); }
+  match /enrollmentRequests/{uid} {
+   allow get: if owner(uid) || teacher();
+   allow list: if teacher();
+   allow create: if owner(uid) && request.auth.token.email_verified == true && request.auth.token.firebase.sign_in_provider in ['google.com','password']
+     && request.resource.data.keys().hasOnly(['carnet','email','status','createdAt'])
+     && request.resource.data.carnet is string && request.resource.data.carnet.size() > 0 && request.resource.data.carnet.size() <= 80
+     && request.resource.data.email == request.auth.token.email && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
+   allow update,delete: if teacher();
+  }
   match /students/{uid} { allow read: if teacher() || owner(uid); allow create,update,delete: if teacher(); }
   match /sessions/{id} {
    allow get: if signed(); allow list: if teacher(); allow write: if teacher();
