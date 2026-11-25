@@ -8,3 +8,12 @@
 .stat .pika-face{width:72px;height:72px;max-width:100%;object-fit:contain;margin:0 auto 6px;flex-shrink:0}
 .stat:not(:has(.pika-face)){justify-content:center}
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.stat{padding:10px}.stat .pika-face{width:56px;height:56px}.stat b{font-size:1.5rem}}
+
+/* Tarjetas de asistencia: tamaño contenido y distribución adaptable */
+#stats.stats{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;align-items:stretch}
+#stats .stat{min-width:0;overflow:hidden;padding:12px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:138px;line-height:1.3;font-size:clamp(.78rem,1.6vw,1rem)}
+#stats .stat img.pika-face{display:block;width:72px!important;height:72px!important;max-width:100%!important;max-height:72px!important;object-fit:contain!important;object-position:center;margin:0 auto 8px;flex:none}
+#stats .stat b{font-size:1.6rem;line-height:1.2;margin:0 0 3px}
+#history img.pika-face{width:30px!important;height:30px!important;max-width:30px!important;object-fit:contain!important;vertical-align:middle}
+@media(max-width:900px){#stats.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:480px){#stats.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}#stats .stat{min-height:120px}#stats .stat img.pika-face{width:56px!important;height:56px!important;max-height:56px!important}}
