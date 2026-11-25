@@ -243,6 +243,19 @@ button.onclick=async()=>{
  // A3 landscape for the wide academic table; A4 landscape for the lesson form.
  const available=(academic?420:297)*96/25.4-16*96/25.4;
  const scale=Math.min(1,available/width);const print=d.createElement('style');print.textContent=`@page{size:${academic?'A3':'A4'} landscape;margin:8mm}@media print{#pdf-full{zoom:${scale};width:${width}px!important}html,body{width:auto!important;min-width:0!important}.academic thead{display:table-header-group}}`;d.head.append(print);
+ // Print-only pagination: avoid fragmentation of flex/grid containers holding long text.
+ const pagination=d.createElement('style');pagination.textContent=`
+ @media print {
+ #pdf-full .panel {display:block!important;break-inside:auto!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+ #pdf-full .activity {display:block!important;break-inside:auto!important;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+ #pdf-full .activity .grid, #pdf-full .panel .grid:has(> .field.full) {display:block!important;}
+ #pdf-full .activity .grid > .field, #pdf-full .panel .grid > .field.full {display:block!important;margin-bottom:12px;break-inside:auto!important;}
+ #pdf-full .field > label {display:block;break-after:avoid; margin-bottom:5px;}
+ #pdf-full .pdf-long {display:block!important;white-space:pre-wrap;overflow:visible!important;break-inside:auto!important;}
+ #pdf-full .activity-heading, #pdf-full h2, #pdf-full h3 {break-after:avoid-page!important;break-inside:avoid!important;}
+ #pdf-full .minute-field .pdf-short, #pdf-full .break-row .pdf-short {width:auto!important;min-width:48px;text-align:center;}
+ #pdf-full .break-row {break-inside:avoid;}
+ }`;d.head.append(pagination);
  w.addEventListener('afterprint',()=>frame.remove(),{once:true});w.focus();w.print();
  }catch(e){frame.remove();alert('No se pudo preparar el PDF: '+e.message);}
 };
