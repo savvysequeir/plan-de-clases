@@ -59,15 +59,6 @@ service cloud.firestore {
    allow update,delete: if teacher();
   }
   match /instrumentos/{id} { allow read,write: if teacher(); }
-  match /studentProfiles/{uid} {
-   allow read: if teacher() || owner(uid);
-   allow create,update: if owner(uid) && exists(/databases/$(database)/documents/students/$(uid)) && request.resource.data.keys().hasOnly(['name','career','year','group','subject','updatedAt']) && request.resource.data.name is string && request.resource.data.name.size() <= 150 && request.resource.data.career is string && request.resource.data.career.size() <= 100 && request.resource.data.year is string && request.resource.data.year.size() <= 30 && request.resource.data.group is string && request.resource.data.group.size() <= 30 && request.resource.data.subject in ['A1','A2','A2+'] && request.resource.data.updatedAt == request.time;
-  }
-  match /learningEvidence/{id} {
-   allow read: if teacher() || (signed() && resource.data.studentUid == request.auth.uid);
-   allow create: if signed() && request.resource.data.studentUid == request.auth.uid && request.resource.data.scope == studentScope() && request.resource.data.keys().hasOnly(['studentUid','scope','title','partial','url','description','status','createdAt']) && request.resource.data.title is string && request.resource.data.title.size() <= 150 && request.resource.data.partial in ['I','II','III'] && request.resource.data.url is string && request.resource.data.url.size() <= 1000 && request.resource.data.url.matches('https://.*') && request.resource.data.description is string && request.resource.data.description.size() <= 1000 && request.resource.data.status == 'pending' && request.resource.data.createdAt == request.time;
-   allow update,delete: if teacher();
-  }
   match /audit/{id} { allow read,write: if teacher(); }
   match /{document=**} { allow read,write: if false; }
  }
